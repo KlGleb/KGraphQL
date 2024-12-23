@@ -16,6 +16,7 @@ data class SchemaDefinition(
         val scalars: List<TypeDef.Scalar<*>>,
         val mutations: List<MutationDef<*>>,
         val subscriptions: List<SubscriptionDef<*>>,
+        val subscriptionsFlow: List<SubscriptionFlowDef<*>>,
         val enums: List<TypeDef.Enumeration<*>>,
         val unions: List<TypeDef.Union>,
         val directives: List<Directive.Partial>,

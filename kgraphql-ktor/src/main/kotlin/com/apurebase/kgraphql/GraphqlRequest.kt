@@ -1,12 +1,10 @@
 package com.apurebase.kgraphql
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
+import com.fasterxml.jackson.databind.JsonNode
 
 
-@Serializable
 data class GraphqlRequest(
     val operationName: String? = null,
-    val variables: JsonObject? = null,
+    val variables: JsonNode? = null,
     val query: String
 )

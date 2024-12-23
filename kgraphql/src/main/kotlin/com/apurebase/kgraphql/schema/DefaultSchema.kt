@@ -16,6 +16,8 @@ import com.apurebase.kgraphql.schema.structure.RequestInterpreter
 import com.apurebase.kgraphql.schema.structure.SchemaModel
 import com.apurebase.kgraphql.schema.structure.Type
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
@@ -60,6 +62,32 @@ class DefaultSchema(
         val executor = options.executor?.let(this@DefaultSchema::getExecutor) ?: defaultRequestExecutor
 
         executor.suspendExecute(
+            plan = requestInterpreter.createExecutionPlan(document, operationName, parsedVariables, options),
+            variables = parsedVariables,
+            context = context
+        )
+    }
+
+    override suspend fun executeSubscription(
+        request: String,
+        variables: String?,
+        context: Context,
+        options: ExecutionOptions,
+        operationName: String?,
+    ): Flow<String>  {
+        val parsedVariables = variables
+            ?.let { VariablesJson.Defined(configuration.objectMapper, variables) }
+            ?: VariablesJson.Empty()
+
+        if (!configuration.introspection && request.isIntrospection()) {
+            throw GraphQLError("GraphQL introspection is not allowed")
+        }
+
+        val document = Parser(request).parseDocument()
+
+        val executor = FlowExecutor(this@DefaultSchema)
+
+        return executor.suspendExecuteFlow(
             plan = requestInterpreter.createExecutionPlan(document, operationName, parsedVariables, options),
             variables = parsedVariables,
             context = context

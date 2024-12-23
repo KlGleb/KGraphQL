@@ -5,6 +5,7 @@ import com.apurebase.kgraphql.configuration.SchemaConfiguration
 import com.apurebase.kgraphql.schema.execution.ExecutionOptions
 import com.apurebase.kgraphql.schema.structure.LookupSchema
 import com.apurebase.kgraphql.schema.structure.Type
+import kotlinx.coroutines.flow.Flow
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
@@ -57,5 +58,15 @@ class SchemaProxy(
         operationName: String?
     ): String {
         return getProxied().execute(request, variables, context, options, operationName)
+    }
+
+    override suspend fun executeSubscription(
+        request: String,
+        variables: String?,
+        context: Context,
+        options: ExecutionOptions,
+        operationName: String?
+    ): Flow<String> {
+        TODO("Not yet implemented")
     }
 }

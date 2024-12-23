@@ -3,15 +3,26 @@ package com.apurebase.kgraphql
 import com.apurebase.kgraphql.schema.Schema
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.apurebase.kgraphql.schema.dsl.SchemaConfigurationDSL
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sse.*
+import io.ktor.server.websocket.*
+import io.ktor.sse.*
 import io.ktor.util.*
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.*
-import kotlinx.serialization.json.Json.Default.decodeFromString
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.forEach
+
+private val mapper = jacksonObjectMapper()
 
 class GraphQL(val schema: Schema) {
 
@@ -26,6 +37,7 @@ class GraphQL(val schema: Schema) {
         var playground: Boolean = false
 
         var endpoint: String = "/graphql"
+        var subscriptionEndpoint: String = "/graphql-subscribe"
 
         fun context(block: ContextBuilder.(ApplicationCall) -> Unit) {
             contextSetup = block
@@ -68,7 +80,7 @@ class GraphQL(val schema: Schema) {
                     route(config.endpoint) {
                         post {
                             val bodyAsText = call.receiveText()
-                            val request = decodeFromString(GraphqlRequest.serializer(), bodyAsText)
+                            val request = mapper.readValue<GraphqlRequest>(bodyAsText)
                             val ctx = context {
                                 config.contextSetup?.invoke(this, call)
                             }
@@ -89,12 +101,33 @@ class GraphQL(val schema: Schema) {
                             call.respondBytes(playgroundHtml, contentType = ContentType.Text.Html)
                         }
                     }
+
+                    plugin(SSE)
+                    ssePost(config.subscriptionEndpoint) {
+                        val bodyAsText = call.receiveText()
+                        val request = mapper.readValue<GraphqlRequest>(bodyAsText)
+                        val ctx = context {
+                            config.contextSetup?.invoke(this, call)
+                        }
+
+                        val result = schema.executeSubscription(
+                            request.query,
+                            request.variables.toString(),
+                            ctx,
+                            operationName = request.operationName
+                        )
+
+                        result.collect {
+                            send(ServerSentEvent(it))
+                        }
+
+                    }
                 }
 
                 config.wrapWith?.invoke(this, routing) ?: routing(this)
             }
 
-            pipeline.pluginOrNull(Routing)?.apply(routing) ?: pipeline.install(Routing, routing)
+            pipeline.pluginOrNull(RoutingRoot)?.apply(routing) ?: pipeline.install(RoutingRoot, routing)
 
             pipeline.intercept(ApplicationCallPipeline.Monitoring) {
                 try {
@@ -110,26 +143,35 @@ class GraphQL(val schema: Schema) {
             return GraphQL(schema)
         }
 
-        private fun GraphQLError.serialize(): String = buildJsonObject {
-            put("errors", buildJsonArray {
-                addJsonObject {
-                    put("message", message)
-                    put("locations", buildJsonArray {
-                        locations?.forEach {
-                            addJsonObject {
-                                put("line", it.line)
-                                put("column", it.column)
+        private fun GraphQLError.serialize(): String {
+            val objectNode: ObjectNode = JsonNodeFactory.instance.objectNode().apply {
+                putArray("errors").apply {
+                    addObject().apply {
+                        put("message", message)
+                        putArray("locations").apply {
+                            locations?.forEach {
+                                addObject().apply {
+                                    put("line", it.line)
+                                    put("column", it.column)
+                                }
                             }
                         }
-                    })
-                    put("path", buildJsonArray {
-                        // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
-                    })
+                        putArray("path").apply {
+                            // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
+                        }
+                    }
                 }
-            })
-        }.toString()
+            }
 
+            return objectNode.toString()
+        }
     }
+}
 
+private fun Route.ssePost(path: String, handler: suspend ServerSSESession.() -> Unit) {
+    plugin(SSE)
 
+    route(path, HttpMethod.Post) {
+        sse(handler)
+    }
 }

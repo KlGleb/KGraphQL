@@ -6,6 +6,7 @@ import com.apurebase.kgraphql.schema.SchemaException
 import com.apurebase.kgraphql.schema.dsl.operations.MutationDSL
 import com.apurebase.kgraphql.schema.dsl.operations.QueryDSL
 import com.apurebase.kgraphql.schema.dsl.operations.SubscriptionDSL
+import com.apurebase.kgraphql.schema.dsl.operations.SubscriptionFlowDSL
 import com.apurebase.kgraphql.schema.dsl.types.*
 import com.apurebase.kgraphql.schema.model.EnumValueDef
 import com.apurebase.kgraphql.schema.model.MutableSchemaDefinition
@@ -64,6 +65,14 @@ class SchemaBuilder internal constructor() {
             .toKQLSubscription()
 
         model.addSubscription(subscription)
+    }
+
+    fun subscriptionFlow(name : String, init: SubscriptionFlowDSL.() -> Unit){
+        val subscription = SubscriptionFlowDSL(name)
+            .apply(init)
+            .toKQLSubscription()
+
+        model.addSubscriptionFlow(subscription)
     }
 
     //================================================================================
