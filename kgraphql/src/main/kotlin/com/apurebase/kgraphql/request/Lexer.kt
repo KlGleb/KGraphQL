@@ -92,7 +92,7 @@ data class Lexer(
         )
         }
 
-        return when (val code = body[pos].toInt()) {
+        return when (val code = body[pos].code) {
             // !
             33 -> tok(BANG)
             // #

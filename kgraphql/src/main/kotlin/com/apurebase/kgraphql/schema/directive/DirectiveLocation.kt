@@ -12,7 +12,7 @@ enum class DirectiveLocation {
 
     companion object {
         fun from(str: String) = str.lowercase().let { lowered ->
-            values().firstOrNull { it.name.lowercase() == lowered }
+            entries.firstOrNull { it.name.lowercase() == lowered }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.Context
+import com.apurebase.kgraphql.schema.model.AccessPropertiesRule
 import com.apurebase.kgraphql.schema.model.FunctionWrapper
 import com.apurebase.kgraphql.schema.model.InputValueDef
 import com.apurebase.kgraphql.schema.model.PropertyDef
@@ -15,6 +16,8 @@ class PropertyDSL<T : Any, R>(val name : String, block : PropertyDSL<T, R>.() ->
     private val inputValues = mutableListOf<InputValueDef<*>>()
 
     var explicitReturnType: KType? = null
+
+    private var accessPropertiesRule: AccessPropertiesRule<Any?>? = null
 
     init {
         block()
@@ -69,5 +72,9 @@ class PropertyDSL<T : Any, R>(val name : String, block : PropertyDSL<T, R>.() ->
 
     override fun setReturnType(type: KType) {
         explicitReturnType = type
+    }
+
+    override fun setAccessProperties(accessPropertiesRule: AccessPropertiesRule<Any?>) {
+        this.accessPropertiesRule = accessPropertiesRule
     }
 }

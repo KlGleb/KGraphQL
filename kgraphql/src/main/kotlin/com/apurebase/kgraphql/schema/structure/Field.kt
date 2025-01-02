@@ -22,11 +22,10 @@ sealed class Field : __Field {
     abstract fun checkAccess(parent : Any?, ctx: Context)
 
     open class Function<T, R>(
-            kql : BaseOperationDef<T, R>,
+            val kql : BaseOperationDef<T, R>,
             override val returnType: Type,
             override val arguments: List<InputValue<*>>
     ) : Field(), FunctionWrapper<R> by kql {
-
         override val name: String = kql.name
 
         override val description: String? = kql.description

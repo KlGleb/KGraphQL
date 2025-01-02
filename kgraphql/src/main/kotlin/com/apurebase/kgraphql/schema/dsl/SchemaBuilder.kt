@@ -71,7 +71,6 @@ class SchemaBuilder internal constructor() {
         val subscription = SubscriptionFlowDSL(name)
             .apply(init)
             .toKQLSubscription()
-
         model.addSubscriptionFlow(subscription)
     }
 

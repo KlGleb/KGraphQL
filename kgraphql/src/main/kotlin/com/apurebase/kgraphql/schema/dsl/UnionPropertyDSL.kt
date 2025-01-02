@@ -1,15 +1,14 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.Context
-import com.apurebase.kgraphql.schema.model.FunctionWrapper
-import com.apurebase.kgraphql.schema.model.InputValueDef
-import com.apurebase.kgraphql.schema.model.PropertyDef
-import com.apurebase.kgraphql.schema.model.TypeDef
+import com.apurebase.kgraphql.schema.model.*
 import java.lang.IllegalArgumentException
 import kotlin.reflect.KType
 
 
 class UnionPropertyDSL<T : Any>(val name : String, block: UnionPropertyDSL<T>.() -> Unit) : LimitedAccessItemDSL<T>(), ResolverDSL.Target {
+
+    private var accessPropertiesRule: AccessPropertiesRule<*>? = null
 
     init {
         block()
@@ -73,5 +72,9 @@ class UnionPropertyDSL<T : Any>(val name : String, block: UnionPropertyDSL<T>.()
 
     override fun setReturnType(type: KType) {
         throw IllegalArgumentException("A return value cannot be set on an Union type")
+    }
+
+    override fun setAccessProperties(accessPropertiesRule: AccessPropertiesRule<Any?>) {
+        this.accessPropertiesRule = accessPropertiesRule
     }
 }

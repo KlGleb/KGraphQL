@@ -15,7 +15,6 @@ import kotlin.reflect.full.starProjectedType
 class SubscriptionDSL(
     name: String
 ) : AbstractOperationDSL(name) {
-
     internal fun toKQLSubscription(): SubscriptionDef<out Any?> {
         val function =
             functionWrapper ?: throw IllegalArgumentException("resolver has to be specified for query [$name]")

@@ -110,15 +110,21 @@ class GraphQL(val schema: Schema) {
                             config.contextSetup?.invoke(this, call)
                         }
 
-                        val result = schema.executeSubscription(
-                            request.query,
-                            request.variables.toString(),
-                            ctx,
-                            operationName = request.operationName
-                        )
+                        val result = try {
+                            schema.executeSubscription(
+                                request.query,
+                                request.variables.toString(),
+                                ctx,
+                                operationName = request.operationName
+                            )
+                        } catch (e: GraphQLError) {
+                            send(e.serialize())
+                            return@ssePost
+                        }
 
                         result.collect {
                             send(ServerSentEvent(it))
+                            println("still works $it ")
                         }
 
                     }

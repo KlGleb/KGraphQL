@@ -1,6 +1,7 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.Context
+import com.apurebase.kgraphql.schema.model.AccessPropertiesRule
 import com.apurebase.kgraphql.schema.model.FunctionWrapper
 import com.apurebase.kgraphql.schema.model.InputValueDef
 import com.apurebase.kgraphql.schema.model.PropertyDef
@@ -14,6 +15,7 @@ class DataLoaderPropertyDSL<T, K, R>(
     val returnType: KType,
     private val block : DataLoaderPropertyDSL<T, K, R>.() -> Unit
 ): LimitedAccessItemDSL<T>(), ResolverDSL.Target {
+    private var accessPropertiesRule: AccessPropertiesRule<Any?>? = null
 
     internal var dataLoader: BatchLoader<K, R>? = null
     internal var prepareWrapper: FunctionWrapper<K>? = null
@@ -97,6 +99,10 @@ class DataLoaderPropertyDSL<T, K, R>(
 
     override fun setReturnType(type: KType) {
         explicitReturnType = type
+    }
+
+    override fun setAccessProperties(accessPropertiesRule: AccessPropertiesRule<Any?>) {
+        this.accessPropertiesRule = accessPropertiesRule
     }
 
 }

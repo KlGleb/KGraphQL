@@ -35,7 +35,7 @@ class DefaultSchema(
 
     private fun getExecutor(executor: Executor) = when (executor) {
         Parallel -> ParallelRequestExecutor(this)
-        DataLoaderPrepared -> DataLoaderPreparedRequestExecutor(this)
+        DataLoaderPrepared -> throw Exception("The executor doesn't support some configs") //DataLoaderPreparedRequestExecutor(this)
     }
 
     private val requestInterpreter: RequestInterpreter = RequestInterpreter(model)
@@ -85,7 +85,7 @@ class DefaultSchema(
 
         val document = Parser(request).parseDocument()
 
-        val executor = FlowExecutor(this@DefaultSchema)
+        val executor = ParallelRequestExecutor(this@DefaultSchema)
 
         return executor.suspendExecuteFlow(
             plan = requestInterpreter.createExecutionPlan(document, operationName, parsedVariables, options),

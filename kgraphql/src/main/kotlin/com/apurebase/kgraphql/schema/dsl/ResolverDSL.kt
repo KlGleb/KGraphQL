@@ -1,12 +1,14 @@
 package com.apurebase.kgraphql.schema.dsl
 
 import com.apurebase.kgraphql.schema.dsl.types.InputValuesDSL
+import com.apurebase.kgraphql.schema.model.AccessPropertiesRule
 import com.apurebase.kgraphql.schema.model.InputValueDef
-import kotlin.reflect.*
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 
 class ResolverDSL(val target: Target) {
-    fun withArgs(block : InputValuesDSL.() -> Unit){
+    fun withArgs(block: InputValuesDSL.() -> Unit) {
         val inputValuesDSL = InputValuesDSL().apply(block)
 
         target.addInputValues(inputValuesDSL.inputValues.map { inputValue ->
@@ -14,8 +16,7 @@ class ResolverDSL(val target: Target) {
         })
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    inline fun <reified T: Any> returns(): ResolverDSL {
+    inline fun <reified T : Any> returns(): ResolverDSL {
         target.setReturnType(typeOf<T>())
         return this
     }
@@ -23,5 +24,6 @@ class ResolverDSL(val target: Target) {
     interface Target {
         fun addInputValues(inputValues: Collection<InputValueDef<*>>)
         fun setReturnType(type: KType)
+        fun setAccessProperties(accessPropertiesRule: AccessPropertiesRule<Any?>)
     }
 }

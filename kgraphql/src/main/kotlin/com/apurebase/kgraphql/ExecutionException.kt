@@ -6,11 +6,19 @@ import com.apurebase.kgraphql.schema.model.ast.ASTNode
 class ExecutionException(
     message: String,
     node: ASTNode? = null,
-    cause: Throwable? = null
+    cause: Throwable? = null,
+    extensions: Map<String, String>? = null,
 ) : GraphQLError(
     message,
     nodes = node?.let(::listOf),
-    originalError = cause
+    originalError = cause,
+    extensions = extensions,
 ) {
-    constructor(message: String, node: Execution, cause: Throwable? = null): this(message, node.selectionNode, cause)
+    constructor(
+        message: String,
+        node: Execution,
+        cause: Throwable? = null,
+        extensions: Map<String, String>? = null,
+    ) : this(message, node.selectionNode, cause, extensions)
 }
+
