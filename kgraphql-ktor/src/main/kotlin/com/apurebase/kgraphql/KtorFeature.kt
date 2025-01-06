@@ -3,8 +3,6 @@ package com.apurebase.kgraphql
 import com.apurebase.kgraphql.schema.Schema
 import com.apurebase.kgraphql.schema.dsl.SchemaBuilder
 import com.apurebase.kgraphql.schema.dsl.SchemaConfigurationDSL
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.http.*
@@ -13,14 +11,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
-import io.ktor.server.websocket.*
 import io.ktor.sse.*
 import io.ktor.util.*
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.forEach
+import kotlinx.coroutines.flow.catch
 
 private val mapper = jacksonObjectMapper()
 
@@ -116,16 +110,27 @@ class GraphQL(val schema: Schema) {
                                 request.variables.toString(),
                                 ctx,
                                 operationName = request.operationName
-                            )
+                            ).catch { e ->
+                                e.printStackTrace()
+                                if (e is GraphQLError) {
+                                    send(e.serialize())
+                                } else {
+                                    val error = GraphQLError(message = e.message ?: "Unknown error", originalError = e)
+                                    send(error.serialize())
+                                }
+                                close()
+                            }
                         } catch (e: GraphQLError) {
+                            e.printStackTrace()
                             send(e.serialize())
                             return@ssePost
                         }
 
                         result.collect {
                             send(ServerSentEvent(it))
-                            println("still works $it ")
+                            println("Collecting subscription result: $it ")
                         }
+
 
                     }
                 }
@@ -147,29 +152,6 @@ class GraphQL(val schema: Schema) {
                 }
             }
             return GraphQL(schema)
-        }
-
-        private fun GraphQLError.serialize(): String {
-            val objectNode: ObjectNode = JsonNodeFactory.instance.objectNode().apply {
-                putArray("errors").apply {
-                    addObject().apply {
-                        put("message", message)
-                        putArray("locations").apply {
-                            locations?.forEach {
-                                addObject().apply {
-                                    put("line", it.line)
-                                    put("column", it.column)
-                                }
-                            }
-                        }
-                        putArray("path").apply {
-                            // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
-                        }
-                    }
-                }
-            }
-
-            return objectNode.toString()
         }
     }
 }

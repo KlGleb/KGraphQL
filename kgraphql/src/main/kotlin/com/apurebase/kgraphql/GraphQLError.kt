@@ -3,6 +3,7 @@ package com.apurebase.kgraphql
 import com.apurebase.kgraphql.schema.model.ast.ASTNode
 import com.apurebase.kgraphql.schema.model.ast.Location.Companion.getLocation
 import com.apurebase.kgraphql.schema.model.ast.Source
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 
 open class GraphQLError(
 
@@ -79,3 +80,33 @@ open class GraphQLError(
 }
 
 data class GraphQlErrorInfo(val message: String? = null, val extensions: Map<String, String>? = null)
+
+fun GraphQLError.serialize(): String {
+    val objectNode = JsonNodeFactory.instance.objectNode().apply {
+        putArray("errors").apply {
+            addObject().apply {
+                put("message", message)
+                putArray("locations").apply {
+                    locations?.forEach {
+                        addObject().apply {
+                            put("line", it.line)
+                            put("column", it.column)
+                        }
+                    }
+                }
+                putArray("path").apply {
+                    // TODO: Build this path. https://spec.graphql.org/June2018/#example-90475
+                }
+                if (extensions != null) {
+                    putObject("extensions").apply {
+                        extensions.forEach {
+                            put(it.key, it.value)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return objectNode.toString()
+}

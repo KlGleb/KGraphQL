@@ -7,6 +7,7 @@ import com.apurebase.kgraphql.request.VariablesJson
 import com.apurebase.kgraphql.schema.DefaultSchema
 import com.apurebase.kgraphql.schema.execution.FlowExecutor.ExecutionContext
 import com.apurebase.kgraphql.schema.introspection.TypeKind
+import com.apurebase.kgraphql.schema.model.AccessPropertiesRule
 import com.apurebase.kgraphql.schema.model.ast.ArgumentNodes
 import com.apurebase.kgraphql.schema.model.FunctionWrapper
 import com.apurebase.kgraphql.schema.model.FunctionWrapper.ArityZero
@@ -146,10 +147,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                         ctx = ctx,
                         node = node,
                         result = res,
-                        accessProperties = (node.field as Field.Function<*, *>).checkAccess?.access(
-                            ctx.requestContext,
-                            res
-                        ),
+                        checkAccess  = (node.field as Field.Function<*, *>).checkAccess,
                         exceptions = exceptions,
                     ) else null
 
@@ -210,27 +208,20 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             ctx = ctx
         )
 
-        val accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>? =
-            if (operationResult != null) operation.checkAccess?.access(
-                ctx.requestContext,
-                operationResult
-            ) else null
-
-
-
-        return createNode(ctx, operationResult, node, node.field.returnType, exceptions, accessProperties)
+        return createNode(ctx, operationResult, node, node.field.returnType, exceptions, operation.checkAccess)
     }
 
     private suspend fun <T> writeFlowResult(
         ctx: ExecutionContext,
         node: Execution.Node,
         result: T?,
-        accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>?,
+//        accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>?,
+        checkAccess: AccessPropertiesRule<Any?>?,
         exceptions: MutableList<GraphQLError>,
     ): JsonNode {
         node.field.checkAccess(null, ctx.requestContext)
         val operationResult: T? = result
-        return createNode(ctx, operationResult, node, node.field.returnType, exceptions, accessProperties)
+        return createNode(ctx, operationResult, node, node.field.returnType, exceptions, checkAccess)
     }
 
     private suspend fun <T> getFlowOperation(
@@ -290,14 +281,14 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         node: Execution.Node,
         returnType: Type,
         exceptions: MutableList<GraphQLError>,
-        accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>? = null,
+        checkAccess: AccessPropertiesRule<Any?>? = null,
     ): JsonNode {
         if (value == null) {
             return createNullNode(node, returnType)
         }
         val unboxed = schema.configuration.genericTypeResolver.unbox(value)
         if (unboxed !== value) {
-            return createNode(ctx, unboxed, node, returnType, exceptions, accessProperties)
+            return createNode(ctx, unboxed, node, returnType, exceptions, checkAccess)
         }
 
         return when {
@@ -309,7 +300,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                 }
                 if (returnType.isList()) {
                     val valuesMap = values.toMapAsync(dispatcher) {
-                        createNode(ctx, it, node, returnType.unwrapList(), exceptions, accessProperties)
+                        createNode(ctx, it, node, returnType.unwrapList(), exceptions, checkAccess)
                     }
                     values.fold(jsonNodeFactory.arrayNode(values.size)) { array, v ->
                         array.add(valuesMap[v])
@@ -328,7 +319,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
             //big decimal etc?
 
             node.children.isNotEmpty() -> {
-                createObjectNode(ctx, value, node, returnType, exceptions, accessProperties)
+                createObjectNode(ctx, value, node, returnType, exceptions, checkAccess)
             }
 
             node is Execution.Union -> {
@@ -372,9 +363,10 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         node: Execution.Node,
         type: Type,
         exceptions: MutableList<GraphQLError>,
-        accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>? = null,
+        checkAccess: AccessPropertiesRule<Any?>? = null,
     ): ObjectNode {
         val objectNode = jsonNodeFactory.objectNode()
+        val accessProperties = checkAccess?.access(ctx.requestContext, value)
         for (child in node.children) {
             when (child) {
                 is Execution.Fragment -> objectNode.setAll<JsonNode>(handleFragment(ctx, value, child, exceptions))
@@ -386,7 +378,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                         type,
                         node.children.size,
                         exceptions,
-                        accessProperties
+                        accessProperties,
+                        checkAccess,
                     )
                     objectNode.merge(key, jsonNode)
                 }
@@ -403,6 +396,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         childrenSize: Int,
         exceptions: MutableList<GraphQLError>,
         accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>? = null,
+        checkAccess: AccessPropertiesRule<Any?>? = null,
     ): Pair<String, JsonNode?> {
         when (child) {
             //Union is subclass of Node so check it first
@@ -432,7 +426,8 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                     field,
                     childrenSize,
                     exceptions,
-                    accessProperties
+                    accessProperties,
+                    checkAccess
                 )
             }
 
@@ -483,6 +478,7 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
         parentTimes: Int,
         exceptions: MutableList<GraphQLError>,
         accessProperties: Map<KProperty<*>, GraphQlErrorInfo?>? = null,
+        checkAccess: AccessPropertiesRule<Any?>? = null,
     ): JsonNode? {
         val include = determineInclude(ctx, node)
         node.field.checkAccess(parentValue, ctx.requestContext)
@@ -508,10 +504,10 @@ class ParallelRequestExecutor(val schema: DefaultSchema) : RequestExecutor {
                         ctx = ctx
                     ) ?: rawValue
 
-
+//                    val accessProperties = checkAccess?.access(ctx.requestContext, value)
                     val accessDeniedException = accessProperties?.get(field.kProperty)
                     if (accessDeniedException == null) {
-                        return createNode(ctx, value, node, field.returnType, exceptions, accessProperties)
+                        return createNode(ctx, value, node, field.returnType, exceptions, checkAccess)
                     } else {
                         exceptions += ExecutionException(
                             accessDeniedException.message ?: "Access to property '${node.key}' is denied",
