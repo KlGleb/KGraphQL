@@ -1,6 +1,7 @@
 plugins {
     base
-    alias(libs.plugins.kotlin.jvm)
+//    alias(libs.plugins.kotlin.jvm)
+    kotlin("jvm") version "2.1.0"
 }
 
 val serialization_version: String by project
