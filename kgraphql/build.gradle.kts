@@ -2,7 +2,7 @@
 plugins {
     base
 //    alias(libs.plugins.kotlin.jvm)
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "1.8.0"
 }
 
 val caffeine_version: String by project
