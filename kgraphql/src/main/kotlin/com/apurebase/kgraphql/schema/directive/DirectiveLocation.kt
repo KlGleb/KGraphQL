@@ -11,6 +11,7 @@ enum class DirectiveLocation {
     INLINE_FRAGMENT;
 
     companion object {
+        @OptIn(ExperimentalStdlibApi::class)
         fun from(str: String) = str.lowercase().let { lowered ->
             entries.firstOrNull { it.name.lowercase() == lowered }
         }

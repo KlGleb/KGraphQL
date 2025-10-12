@@ -1,6 +1,6 @@
 plugins {
     base
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "2.2.20"
     kotlin("plugin.serialization") version "1.8.0"
 }
 
@@ -33,12 +33,15 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.ktor:ktor-server-auth:$ktor_version")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit_version")
+    implementation("io.ktor:ktor-server-sse:3.3.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${jackson_version}")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}")
 }
 
 
 tasks {
-    compileKotlin { kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() } }
-    compileTestKotlin { kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() } }
+//    compileKotlin { kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() } }
+//    compileTestKotlin { kotlinOptions { jvmTarget = JavaVersion.VERSION_11.toString() } }
 
     test {
         useJUnitPlatform()
