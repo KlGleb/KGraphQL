@@ -30,7 +30,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jackson_version")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
 
-    implementation("com.github.ben-manes.caffeine:caffeine:3.2.2")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.6")
     implementation("com.apurebase:DeferredJsonBuilder:$deferredJsonBuilder_version")
 
 //    api("de.nidomiro:KDataLoader:$kDataLoader_version")
