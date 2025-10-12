@@ -4,6 +4,15 @@ plugins {
     base
 //    alias(libs.plugins.kotlin.jvm)
     kotlin("jvm") version "2.2.20"
+    `maven-publish`
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+    }
 }
 
 val caffeine_version: String by project

@@ -4,6 +4,15 @@ plugins {
     base
     kotlin("jvm") version "2.2.20"
     kotlin("plugin.serialization") version "1.8.0"
+    `maven-publish`
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+    }
 }
 
 val caffeine_version: String by project
