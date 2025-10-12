@@ -19,6 +19,11 @@ val junit_version: String by project
 
 val isReleaseVersion = !version.toString().endsWith("SNAPSHOT")
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
