@@ -8,6 +8,7 @@ val sonatypePassword: String? = System.getenv("sonatypePassword")
 plugins {
     id("com.github.ben-manes.versions") version "0.44.0"
     id("de.marcphilipp.nexus-publish") version "0.4.0"
+    `maven-publish`
     jacoco
 }
 
@@ -24,4 +25,12 @@ subprojects {
 
 
 tasks {
+}
+
+publishing {
+    publications {
+        withType<MavenPublication> {
+            from(components["java"])
+        }
+    }
 }
