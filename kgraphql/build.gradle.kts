@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     base
 //    alias(libs.plugins.kotlin.jvm)
-    kotlin("jvm") version "2.1.20"
+    kotlin("jvm") version "2.2.20"
     `maven-publish`
 }
 
