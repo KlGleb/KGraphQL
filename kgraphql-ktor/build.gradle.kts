@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     base
-//    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.1.20"
     kotlin("plugin.serialization") version "1.8.0"
     `maven-publish`
 }

@@ -10,7 +10,7 @@ plugins {
     id("de.marcphilipp.nexus-publish") version "0.4.0"
     `maven-publish`
     jacoco
-    kotlin("jvm") version "2.1.0"
+//    kotlin("jvm") version "2.1.0"
 }
 
 allprojects {
